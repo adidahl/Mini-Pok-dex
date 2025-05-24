@@ -90,7 +90,7 @@ struct Pokemon: Identifiable, Codable, Hashable {
 }
 
 // This is a more lightweight model used for lists and search results
-struct PokemonListItem: Identifiable, Codable, Equatable {
+struct PokemonListItem: Identifiable, Codable, Equatable, Hashable {
     var id: Int {
         // Extract ID from the URL
         // URL format is typically: "https://pokeapi.co/api/v2/pokemon/25/"
@@ -112,6 +112,12 @@ struct PokemonListItem: Identifiable, Codable, Equatable {
     // Implement the Equatable protocol
     static func == (lhs: PokemonListItem, rhs: PokemonListItem) -> Bool {
         return lhs.id == rhs.id && lhs.name == rhs.name
+    }
+    
+    // Implement the Hashable protocol
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(name)
     }
     
     enum CodingKeys: String, CodingKey {
