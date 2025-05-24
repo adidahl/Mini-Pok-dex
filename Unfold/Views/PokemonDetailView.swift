@@ -48,15 +48,25 @@ struct PokemonDetailView: View {
                 if let pokemon = viewModel.pokemon {
                     Button(action: {
                         // Toggle bookmark in this view model
-                        viewModel.toggleBookmark(for: pokemon.id)
+                        let pokemonId = pokemon.id
+                        let isCurrentlyBookmarked = viewModel.isBookmarked(pokemonId)
                         
-                        // Also toggle in the shared model to keep them in sync
-                        // But only if this isn't the shared model itself
-                        if viewModel !== SharedPokemonViewModel.shared {
-                            // Update only the UserDefaults value in the shared model
-                            // without triggering notifications or excessive updates
-                            SharedPokemonViewModel.shared.bookmarkedPokemon = viewModel.bookmarkedPokemon
+                        DispatchQueue.main.async {
+                            // Update local view model
+                            if isCurrentlyBookmarked {
+                                viewModel.bookmarkedPokemon.removeAll { $0 == pokemonId }
+                            } else {
+                                viewModel.bookmarkedPokemon.append(pokemonId)
+                            }
+                            
+                            // Update UserDefaults directly
                             UserDefaults.standard.set(viewModel.bookmarkedPokemon, forKey: "bookmarkedPokemon")
+                            
+                            // Also update the shared model to keep them in sync
+                            SharedPokemonViewModel.shared.bookmarkedPokemon = viewModel.bookmarkedPokemon
+                            
+                            // Post notification to inform other views
+                            NotificationCenter.default.post(name: .pokemonBookmarksChanged, object: nil)
                         }
                     }) {
                         Image(systemName: viewModel.isBookmarked(pokemon.id) ? "bookmark.fill" : "bookmark")

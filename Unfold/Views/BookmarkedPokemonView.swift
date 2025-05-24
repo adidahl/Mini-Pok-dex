@@ -53,9 +53,14 @@ struct BookmarkedPokemonView: View {
                     forName: .pokemonBookmarksChanged,
                     object: nil,
                     queue: .main
-                ) { _ in
-                    // Debounce the updates to prevent excessive reloading
-                    // We don't need to reload here as the shared viewModel is already updated
+                ) { [weak self] _ in
+                    // When a bookmark changes, update the view model's bookmarks list
+                    DispatchQueue.main.async {
+                        guard let self = self else { return }
+                        if let userDefaultsBookmarks = UserDefaults.standard.array(forKey: "bookmarkedPokemon") as? [Int] {
+                            self.viewModel.bookmarkedPokemon = userDefaultsBookmarks
+                        }
+                    }
                 }
             }
         }
@@ -122,10 +127,14 @@ struct BookmarkedPokemonView: View {
             
             PokemonDetailView(viewModel: detailViewModel)
                 .onDisappear {
-                    // When returning from detail view, just refresh the bookmarks
-                    // This avoids modifying state during view updates
-                    DispatchQueue.main.async {
-                        viewModel.loadBookmarkedPokemon()
+                    // When returning from detail view, check if there are bookmark changes
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        // Check if the UserDefaults value has changed
+                        if let userDefaultsBookmarks = UserDefaults.standard.array(forKey: "bookmarkedPokemon") as? [Int],
+                           Set(userDefaultsBookmarks) != Set(viewModel.bookmarkedPokemon) {
+                            // Update the shared view model with the latest bookmarks
+                            viewModel.bookmarkedPokemon = userDefaultsBookmarks
+                        }
                     }
                 }
         }
@@ -152,6 +161,9 @@ struct BookmarkedPokemonView: View {
         
         // Copy bookmarks from shared model
         detailViewModel.bookmarkedPokemon = viewModel.bookmarkedPokemon
+        
+        // Fetch species data for this Pokemon
+        detailViewModel.fetchPokemonSpecies(id: pokemon.id)
         
         return detailViewModel
     }
