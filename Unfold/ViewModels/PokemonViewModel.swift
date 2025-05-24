@@ -2,11 +2,29 @@ import Foundation
 import Combine
 
 // Define view states for the UI
-enum ViewState {
+enum ViewState: Equatable {
     case loading
     case loaded
     case error(Error)
     case empty
+    
+    // Implement Equatable conformance
+    static func == (lhs: ViewState, rhs: ViewState) -> Bool {
+        switch (lhs, rhs) {
+        case (.loading, .loading):
+            return true
+        case (.loaded, .loaded):
+            return true
+        case (.empty, .empty):
+            return true
+        case (.error, .error):
+            // Note: We can't compare the actual errors directly,
+            // so we just check if both are error states
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 class PokemonViewModel: ObservableObject {
@@ -46,7 +64,7 @@ class PokemonViewModel: ObservableObject {
     
     /// Fetch Pokemon species data
     /// - Parameter id: Pokemon ID
-    private func fetchPokemonSpecies(id: Int) {
+    func fetchPokemonSpecies(id: Int) {
         NetworkManager.shared.fetchPokemonSpecies(id: id) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
@@ -122,7 +140,7 @@ class PokemonViewModel: ObservableObject {
     }
     
     /// Load bookmarked Pokemon from UserDefaults
-    private func loadBookmarkedPokemon() {
+    func loadBookmarkedPokemon() {
         if let data = UserDefaults.standard.array(forKey: "bookmarkedPokemon") as? [Int] {
             bookmarkedPokemon = data
         }

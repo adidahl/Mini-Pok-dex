@@ -1,6 +1,6 @@
 import Foundation
 
-struct Pokemon: Identifiable, Codable {
+struct Pokemon: Identifiable, Codable, Hashable {
     let id: Int
     let name: String
     let height: Int
@@ -9,14 +9,24 @@ struct Pokemon: Identifiable, Codable {
     let types: [PokemonType]
     let stats: [Stat]
     
-    struct Sprites: Codable {
+    // Implement hash(into:) for Hashable conformance
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    // Implement == for Hashable conformance
+    static func == (lhs: Pokemon, rhs: Pokemon) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    struct Sprites: Codable, Hashable {
         let frontDefault: String
         let other: OtherSprites?
         
-        struct OtherSprites: Codable {
+        struct OtherSprites: Codable, Hashable {
             let officialArtwork: OfficialArtwork?
             
-            struct OfficialArtwork: Codable {
+            struct OfficialArtwork: Codable, Hashable {
                 let frontDefault: String?
                 
                 enum CodingKeys: String, CodingKey {
@@ -35,22 +45,22 @@ struct Pokemon: Identifiable, Codable {
         }
     }
     
-    struct PokemonType: Codable {
+    struct PokemonType: Codable, Hashable {
         let slot: Int
         let type: TypeInfo
         
-        struct TypeInfo: Codable {
+        struct TypeInfo: Codable, Hashable {
             let name: String
             let url: String
         }
     }
     
-    struct Stat: Codable {
+    struct Stat: Codable, Hashable {
         let baseStat: Int
         let effort: Int
         let stat: StatInfo
         
-        struct StatInfo: Codable {
+        struct StatInfo: Codable, Hashable {
             let name: String
             let url: String
         }
@@ -80,13 +90,18 @@ struct Pokemon: Identifiable, Codable {
 }
 
 // This is a more lightweight model used for lists and search results
-struct PokemonListItem: Identifiable, Codable {
+struct PokemonListItem: Identifiable, Codable, Equatable {
     let id: Int
     let name: String
     let url: String
     
     var formattedName: String {
         return name.capitalized
+    }
+    
+    // Implement the Equatable protocol
+    static func == (lhs: PokemonListItem, rhs: PokemonListItem) -> Bool {
+        return lhs.id == rhs.id
     }
 }
 

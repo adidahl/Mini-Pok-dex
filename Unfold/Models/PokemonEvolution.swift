@@ -65,7 +65,7 @@ struct PokemonEvolutionChain {
         let pokemonId: Int?
         let imageUrl: String?
         let evolutionDetails: EvolutionRequirements?
-        let evolvesTo: [EvolutionStage]
+        var evolvesTo: [EvolutionStage]
         
         struct EvolutionRequirements {
             let levelRequired: Int?

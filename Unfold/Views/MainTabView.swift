@@ -40,13 +40,6 @@ struct MainTabView: View {
     }
 }
 
-// Entry point for the app
-struct ContentView: View {
-    var body: some View {
-        MainTabView()
-    }
-}
-
 // Preview
 struct MainTabView_Previews: PreviewProvider {
     static var previews: some View {

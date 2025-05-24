@@ -2,13 +2,11 @@ import SwiftUI
 
 struct BookmarkedPokemonView: View {
     @StateObject private var viewModel = PokemonViewModel()
-    @State private var selectedPokemon: Pokemon?
-    @State private var isLoading = false
     @State private var showingDeleteConfirmation = false
     @State private var pokemonToDelete: Int?
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Group {
                 if viewModel.bookmarkedPokemon.isEmpty {
                     // Empty state
@@ -89,28 +87,15 @@ struct BookmarkedPokemonView: View {
     private var bookmarkedListView: some View {
         List {
             ForEach(viewModel.bookmarkedPokemon, id: \.self) { pokemonId in
-                BookmarkedPokemonRow(pokemonId: pokemonId) { pokemon in
-                    selectedPokemon = pokemon
-                } onDelete: {
-                    pokemonToDelete = pokemonId
-                    showingDeleteConfirmation = true
-                }
+                BookmarkedPokemonRow(pokemonId: pokemonId, viewModel: viewModel)
             }
         }
         .refreshable {
             // Refresh the bookmarks list
             viewModel.loadBookmarkedPokemon()
         }
-        .navigationDestination(item: $selectedPokemon) { pokemon in
-            // Create a new view model for the detail view
-            let detailViewModel = PokemonViewModel()
-            detailViewModel.pokemon = pokemon
-            detailViewModel.state = .loaded
-            
-            // Fetch additional species data
-            detailViewModel.fetchPokemonSpecies(id: pokemon.id)
-            
-            return PokemonDetailView(viewModel: detailViewModel)
+        .navigationDestination(for: Pokemon.self) { pokemon in
+            PokemonDetailView(viewModel: createDetailViewModel(for: pokemon))
         }
         .alert("Remove from Favorites", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -127,6 +112,13 @@ struct BookmarkedPokemonView: View {
     
     // MARK: - Helper Methods
     
+    private func createDetailViewModel(for pokemon: Pokemon) -> PokemonViewModel {
+        let detailViewModel = PokemonViewModel()
+        detailViewModel.pokemon = pokemon
+        detailViewModel.state = .loaded
+        return detailViewModel
+    }
+    
     private func clearAllBookmarks() {
         for id in viewModel.bookmarkedPokemon {
             viewModel.toggleBookmark(for: id)
@@ -138,8 +130,7 @@ struct BookmarkedPokemonView: View {
 
 struct BookmarkedPokemonRow: View {
     let pokemonId: Int
-    let onSelect: (Pokemon) -> Void
-    let onDelete: () -> Void
+    let viewModel: PokemonViewModel
     
     @State private var pokemon: Pokemon?
     @State private var isLoading = false
@@ -198,10 +189,8 @@ struct BookmarkedPokemonRow: View {
                 
                 Spacer()
                 
-                // View details button
-                Button(action: {
-                    onSelect(pokemon)
-                }) {
+                // Use NavigationLink with value parameter
+                NavigationLink(value: pokemon) {
                     Image(systemName: "chevron.right")
                         .foregroundColor(.blue)
                 }
@@ -224,7 +213,9 @@ struct BookmarkedPokemonRow: View {
         }
         .padding(.vertical, 8)
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive, action: onDelete) {
+            Button(role: .destructive, action: {
+                viewModel.toggleBookmark(for: pokemonId)
+            }) {
                 Label("Remove", systemImage: "trash")
             }
         }
@@ -274,32 +265,6 @@ struct BookmarkedPokemonRow: View {
         ]
         
         return typeColors[typeName] ?? Color(.systemGray)
-    }
-}
-
-// MARK: - Navigation Helper
-
-extension View {
-    // SwiftUI navigation extension for programmatic navigation
-    func navigationDestination<Item: Identifiable, Destination: View>(
-        item: Binding<Item?>,
-        @ViewBuilder destination: @escaping (Item) -> Destination
-    ) -> some View {
-        self.background(
-            NavigationLink(
-                destination: Group {
-                    if let item = item.wrappedValue {
-                        destination(item)
-                    }
-                },
-                isActive: Binding(
-                    get: { item.wrappedValue != nil },
-                    set: { if !$0 { item.wrappedValue = nil } }
-                ),
-                label: { EmptyView() }
-            )
-            .hidden()
-        )
     }
 }
 
