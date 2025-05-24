@@ -242,7 +242,7 @@ struct BookmarkedPokemonRow: View {
                     Image(systemName: "chevron.right")
                         .foregroundColor(.blue)
                 }
-            } else if let error = error {
+            } else if error != nil {
                 HStack {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundColor(.orange)

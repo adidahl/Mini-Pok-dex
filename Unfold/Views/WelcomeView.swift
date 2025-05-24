@@ -169,7 +169,7 @@ struct WelcomeScreenModifier: ViewModifier {
             if !hasSeenWelcome {
                 WelcomeView(hasSeenWelcome: $hasSeenWelcome)
                     .transition(.opacity)
-                    .onChange(of: hasSeenWelcome) { newValue in
+                    .onChange(of: hasSeenWelcome) { oldValue, newValue in
                         if newValue {
                             markAsSeen()
                         }

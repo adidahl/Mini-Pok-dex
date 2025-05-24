@@ -67,7 +67,7 @@ struct SearchPokemonView: View {
             TextField("Search Pokémon", text: $searchText)
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
-                .onChange(of: searchText) { newValue in
+                .onChange(of: searchText) { oldValue, newValue in
                     // Debounce search to avoid too many API calls
                     viewModel.debounceSearch(query: newValue)
                 }
@@ -497,7 +497,7 @@ struct PokemonDetailLoadingView: View {
                 PokemonLoadingView()
                 
             case .loaded:
-                if let pokemon = viewModel.pokemon {
+                if viewModel.pokemon != nil {
                     PokemonDetailView(viewModel: viewModel)
                         .onDisappear {
                             // Update shared view model when returning from detail view
