@@ -114,8 +114,11 @@ struct BookmarkedPokemonView: View {
         List {
             ForEach(viewModel.bookmarkedPokemon, id: \.self) { pokemonId in
                 BookmarkedPokemonRow(pokemonId: pokemonId, viewModel: viewModel)
+                    .listRowSeparator(.visible)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
             }
         }
+        .listStyle(PlainListStyle())
         .refreshable {
             // Refresh the bookmarks list
             viewModel.loadBookmarkedPokemon()
@@ -185,6 +188,20 @@ struct BookmarkedPokemonRow: View {
     @State private var error: Error?
     
     var body: some View {
+        if let pokemon = pokemon {
+            // If we have pokemon data, show the row with NavigationLink
+            NavigationLink(value: pokemon) {
+                rowContent
+            }
+            .buttonStyle(PlainButtonStyle())
+        } else {
+            // If we're still loading or have an error, just show the content without navigation
+            rowContent
+        }
+    }
+    
+    // Extracted row content for reuse
+    private var rowContent: some View {
         HStack {
             if isLoading {
                 ProgressView()
@@ -237,11 +254,7 @@ struct BookmarkedPokemonRow: View {
                 
                 Spacer()
                 
-                // Use NavigationLink with value parameter
-                NavigationLink(value: pokemon) {
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.blue)
-                }
+                // No additional chevron here
             } else if error != nil {
                 HStack {
                     Image(systemName: "exclamationmark.triangle")
