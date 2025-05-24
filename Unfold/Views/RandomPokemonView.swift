@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RandomPokemonView: View {
-    @StateObject private var viewModel = PokemonViewModel()
+    @StateObject private var viewModel = SharedPokemonViewModel.shared
     @State private var isAnimating = false
     
     var body: some View {
@@ -67,8 +67,23 @@ struct RandomPokemonView: View {
                                         
                                         // View Details Button
                                         NavigationLink {
-                                            // Pass the current viewModel to the detail view
-                                            PokemonDetailView(viewModel: viewModel)
+                                            // Create a new view model for detail view
+                                            let detailViewModel = PokemonViewModel()
+                                            if let pokemon = viewModel.pokemon {
+                                                detailViewModel.pokemon = pokemon
+                                                detailViewModel.species = viewModel.species
+                                                detailViewModel.evolutionChain = viewModel.evolutionChain
+                                                detailViewModel.state = .loaded
+                                                detailViewModel.bookmarkedPokemon = viewModel.bookmarkedPokemon
+                                            }
+                                            
+                                            return PokemonDetailView(viewModel: detailViewModel)
+                                                .onDisappear {
+                                                    // Update shared model when returning
+                                                    DispatchQueue.main.async {
+                                                        viewModel.loadBookmarkedPokemon()
+                                                    }
+                                                }
                                         } label: {
                                             HStack {
                                                 Image(systemName: "info.circle")
@@ -89,6 +104,8 @@ struct RandomPokemonView: View {
                                         Button(action: {
                                             if let pokemon = viewModel.pokemon {
                                                 viewModel.toggleBookmark(for: pokemon.id)
+                                                // Immediately reload bookmarks to update all views
+                                                viewModel.loadBookmarkedPokemon()
                                             }
                                         }) {
                                             HStack {

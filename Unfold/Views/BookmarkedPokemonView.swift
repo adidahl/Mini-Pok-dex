@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BookmarkedPokemonView: View {
-    @StateObject private var viewModel = PokemonViewModel()
+    @StateObject private var viewModel = SharedPokemonViewModel.shared
     @State private var showingDeleteConfirmation = false
     @State private var pokemonToDelete: Int?
     
@@ -41,8 +41,34 @@ struct BookmarkedPokemonView: View {
             }
         }
         .onAppear {
-            // Load any new bookmarks when the view appears
+            // Load bookmarks when the view appears
             viewModel.loadBookmarkedPokemon()
+            
+            // Set up notification observer for bookmark changes
+            setupNotificationObserver()
+        }
+        .onDisappear {
+            // Remove notification observer when view disappears
+            NotificationCenter.default.removeObserver(self, name: .pokemonBookmarksChanged, object: nil)
+        }
+    }
+    
+    // MARK: - Notification Handling
+    
+    private func setupNotificationObserver() {
+        // Remove any existing observer first to avoid duplicates
+        NotificationCenter.default.removeObserver(self, name: .pokemonBookmarksChanged, object: nil)
+        
+        // Add the observer
+        NotificationCenter.default.addObserver(
+            forName: .pokemonBookmarksChanged,
+            object: nil,
+            queue: .main
+        ) { _ in
+            // Reload bookmarked Pokemon when notification is received
+            DispatchQueue.main.async {
+                self.viewModel.loadBookmarkedPokemon()
+            }
         }
     }
     
@@ -95,7 +121,17 @@ struct BookmarkedPokemonView: View {
             viewModel.loadBookmarkedPokemon()
         }
         .navigationDestination(for: Pokemon.self) { pokemon in
-            PokemonDetailView(viewModel: createDetailViewModel(for: pokemon))
+            // Create a new view model with the pokemon data
+            let detailViewModel = createDetailViewModel(for: pokemon)
+            
+            PokemonDetailView(viewModel: detailViewModel)
+                .onDisappear {
+                    // When returning from detail view, just refresh the bookmarks
+                    // This avoids modifying state during view updates
+                    DispatchQueue.main.async {
+                        viewModel.loadBookmarkedPokemon()
+                    }
+                }
         }
         .alert("Remove from Favorites", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -113,9 +149,14 @@ struct BookmarkedPokemonView: View {
     // MARK: - Helper Methods
     
     private func createDetailViewModel(for pokemon: Pokemon) -> PokemonViewModel {
+        // Create a new view model instance instead of reusing the shared one
         let detailViewModel = PokemonViewModel()
         detailViewModel.pokemon = pokemon
         detailViewModel.state = .loaded
+        
+        // Copy bookmarks from shared model
+        detailViewModel.bookmarkedPokemon = viewModel.bookmarkedPokemon
+        
         return detailViewModel
     }
     

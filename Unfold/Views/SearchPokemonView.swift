@@ -499,6 +499,12 @@ struct PokemonDetailLoadingView: View {
             case .loaded:
                 if let pokemon = viewModel.pokemon {
                     PokemonDetailView(viewModel: viewModel)
+                        .onDisappear {
+                            // Update shared view model when returning from detail view
+                            DispatchQueue.main.async {
+                                SharedPokemonViewModel.shared.loadBookmarkedPokemon()
+                            }
+                        }
                 } else {
                     ErrorView(error: NetworkError.noData) {
                         loadPokemon()
@@ -518,6 +524,11 @@ struct PokemonDetailLoadingView: View {
         .onAppear {
             if viewModel.state == .empty {
                 loadPokemon()
+            }
+            
+            // Copy bookmarks from shared model using async to avoid state updates during view rendering
+            DispatchQueue.main.async {
+                self.viewModel.bookmarkedPokemon = SharedPokemonViewModel.shared.bookmarkedPokemon
             }
         }
     }

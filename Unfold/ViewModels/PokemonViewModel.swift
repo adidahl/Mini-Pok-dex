@@ -123,13 +123,21 @@ class PokemonViewModel: ObservableObject {
     /// Toggle bookmark status for a Pokemon
     /// - Parameter pokemonId: Pokemon ID to bookmark/unbookmark
     func toggleBookmark(for pokemonId: Int) {
-        if isBookmarked(pokemonId) {
-            bookmarkedPokemon.removeAll { $0 == pokemonId }
-        } else {
-            bookmarkedPokemon.append(pokemonId)
+        // Use DispatchQueue.main.async to avoid publishing changes during view updates
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            if self.isBookmarked(pokemonId) {
+                self.bookmarkedPokemon.removeAll { $0 == pokemonId }
+            } else {
+                self.bookmarkedPokemon.append(pokemonId)
+            }
+            
+            self.saveBookmarkedPokemon()
+            
+            // Post notification when bookmarks change
+            NotificationCenter.default.post(name: .pokemonBookmarksChanged, object: nil)
         }
-        
-        saveBookmarkedPokemon()
     }
     
     /// Check if a Pokemon is bookmarked
@@ -142,7 +150,13 @@ class PokemonViewModel: ObservableObject {
     /// Load bookmarked Pokemon from UserDefaults
     func loadBookmarkedPokemon() {
         if let data = UserDefaults.standard.array(forKey: "bookmarkedPokemon") as? [Int] {
-            bookmarkedPokemon = data
+            // Use DispatchQueue.main.async to avoid publishing changes during view updates
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.bookmarkedPokemon = data
+                // Post notification when bookmarks are loaded
+                NotificationCenter.default.post(name: .pokemonBookmarksChanged, object: nil)
+            }
         }
     }
     
@@ -189,4 +203,9 @@ extension PokemonViewModel {
 // Shared ViewModel instance for app-wide use
 class SharedPokemonViewModel {
     static let shared = PokemonViewModel()
+}
+
+// MARK: - Notification Extension
+extension Notification.Name {
+    static let pokemonBookmarksChanged = Notification.Name("pokemonBookmarksChanged")
 } 

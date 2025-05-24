@@ -47,7 +47,13 @@ struct PokemonDetailView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if let pokemon = viewModel.pokemon {
                     Button(action: {
+                        // Toggle bookmark in this view model
                         viewModel.toggleBookmark(for: pokemon.id)
+                        
+                        // Also toggle in the shared model to keep them in sync
+                        if SharedPokemonViewModel.shared !== viewModel {
+                            SharedPokemonViewModel.shared.toggleBookmark(for: pokemon.id)
+                        }
                     }) {
                         Image(systemName: viewModel.isBookmarked(pokemon.id) ? "bookmark.fill" : "bookmark")
                     }
