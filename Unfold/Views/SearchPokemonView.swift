@@ -33,7 +33,11 @@ struct SearchPokemonView: View {
                 .animation(.easeInOut, value: viewModel.searchResults)
             }
             .navigationTitle("Pokémon Search")
-            .navigationDestination(item: $selectedPokemon) { pokemon in
+            .navigationDestination(for: PokemonListItem.self) { pokemonItem in
+                // When a PokemonListItem is selected, load the full Pokemon details
+                PokemonDetailLoadingView(pokemonId: pokemonItem.id)
+            }
+            .navigationDestination(for: Pokemon.self) { pokemon in
                 // Create a view model for the detail view
                 let detailViewModel = PokemonViewModel()
                 detailViewModel.pokemon = pokemon
@@ -203,11 +207,7 @@ struct SearchPokemonView: View {
     }
     
     private func searchResultRow(_ pokemon: PokemonListItem) -> some View {
-        Button(action: {
-            viewModel.loadPokemonDetails(id: pokemon.id) { loadedPokemon in
-                selectedPokemon = loadedPokemon
-            }
-        }) {
+        NavigationLink(value: pokemon) {
             HStack {
                 // Pokemon image (if available)
                 AsyncImage(url: URL(string: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/\(pokemon.id).png")) { phase in
@@ -250,7 +250,6 @@ struct SearchPokemonView: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(PlainButtonStyle())
     }
     
     private func popularPokemonButton(_ pokemon: PokemonListItem) -> some View {
@@ -278,7 +277,7 @@ struct SearchPokemonView: View {
                 Text(pokemon.formattedName)
                     .font(.caption)
                     .lineLimit(1)
-            }
+                }
             .frame(width: 80)
             .padding(.vertical, 8)
             .padding(.horizontal, 4)
@@ -483,6 +482,49 @@ class SearchViewModel: ObservableObject {
         
         // Return similarity as a value between 0 and 1
         return 1.0 - (distance / maxLength)
+    }
+}
+
+// MARK: - Pokemon Detail Loading View
+
+struct PokemonDetailLoadingView: View {
+    let pokemonId: Int
+    @StateObject private var viewModel = PokemonViewModel()
+    
+    var body: some View {
+        Group {
+            switch viewModel.state {
+            case .loading:
+                PokemonLoadingView()
+                
+            case .loaded:
+                if let pokemon = viewModel.pokemon {
+                    PokemonDetailView(viewModel: viewModel)
+                } else {
+                    ErrorView(error: NetworkError.noData) {
+                        loadPokemon()
+                    }
+                }
+                
+            case .error(let error):
+                ErrorView(error: error) {
+                    loadPokemon()
+                }
+                
+            case .empty:
+                PokemonLoadingView()
+            }
+        }
+        .navigationTitle("Pokémon Details")
+        .onAppear {
+            if viewModel.state == .empty {
+                loadPokemon()
+            }
+        }
+    }
+    
+    private func loadPokemon() {
+        viewModel.fetchPokemon(idOrName: String(pokemonId))
     }
 }
 
