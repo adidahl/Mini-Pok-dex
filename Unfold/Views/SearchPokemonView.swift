@@ -4,35 +4,44 @@ struct SearchPokemonView: View {
     @StateObject private var viewModel = SearchViewModel()
     @State private var searchText = ""
     @State private var selectedPokemon: Pokemon?
+    @FocusState private var isSearchFieldFocused: Bool
     
     var body: some View {
         NavigationStack {
-            VStack {
-                // Search bar
+            VStack(spacing: 0) {
+                // Search bar - fixed position
                 searchBar
+                    .padding(.top, 8)
                 
-                // Results or loading indicator
-                Group {
-                    if viewModel.isLoading {
-                        LoadingView(message: "Searching...")
-                    } else if let error = viewModel.error {
-                        ErrorView(error: error) {
-                            if !searchText.isEmpty {
-                                viewModel.searchPokemon(query: searchText)
+                // Results or loading indicator in a scrollable area
+                ScrollView {
+                    VStack {
+                        if viewModel.isLoading {
+                            LoadingView(message: "Searching...")
+                                .padding(.top, 40)
+                        } else if let error = viewModel.error {
+                            ErrorView(error: error) {
+                                if !searchText.isEmpty {
+                                    viewModel.searchPokemon(query: searchText)
+                                }
                             }
+                            .padding(.top, 40)
+                        } else if !searchText.isEmpty && viewModel.searchResults.isEmpty {
+                            noResultsView
+                                .padding(.top, 40)
+                        } else if searchText.isEmpty && viewModel.recentSearches.isEmpty && viewModel.searchResults.isEmpty {
+                            emptyStateView
+                                .padding(.top, 40)
+                        } else {
+                            resultsListView
                         }
-                    } else if !searchText.isEmpty && viewModel.searchResults.isEmpty {
-                        noResultsView
-                    } else if searchText.isEmpty && viewModel.recentSearches.isEmpty && viewModel.searchResults.isEmpty {
-                        emptyStateView
-                    } else {
-                        resultsListView
                     }
                 }
                 .animation(.easeInOut, value: viewModel.isLoading)
                 .animation(.easeInOut, value: viewModel.searchResults)
             }
             .navigationTitle("Pokémon Search")
+            .navigationBarTitleDisplayMode(.inline) // Use inline title to avoid overlap
             .navigationDestination(for: PokemonListItem.self) { pokemonItem in
                 // When a PokemonListItem is selected, load the full Pokemon details
                 PokemonDetailLoadingView(pokemonId: pokemonItem.id)
@@ -47,6 +56,14 @@ struct SearchPokemonView: View {
                 detailViewModel.fetchPokemonSpecies(id: pokemon.id)
                 
                 return PokemonDetailView(viewModel: detailViewModel)
+            }
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .keyboard) {
+                    Button("Done") {
+                        isSearchFieldFocused = false
+                    }
+                }
             }
         }
         .onAppear {
@@ -67,6 +84,7 @@ struct SearchPokemonView: View {
             TextField("Search Pokémon", text: $searchText)
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
+                .focused($isSearchFieldFocused)
                 .onChange(of: searchText) { oldValue, newValue in
                     // Debounce search to avoid too many API calls
                     viewModel.debounceSearch(query: newValue)
@@ -88,7 +106,7 @@ struct SearchPokemonView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.systemGray6))
         )
-        .padding()
+        .padding(.horizontal)
     }
     
     private var emptyStateView: some View {
@@ -175,35 +193,65 @@ struct SearchPokemonView: View {
     }
     
     private var resultsListView: some View {
-        List {
+        VStack(spacing: 16) {
             // If we have search results, show them
             if !viewModel.searchResults.isEmpty {
-                Section(header: Text("Search Results")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Search Results")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
                     ForEach(viewModel.searchResults) { pokemon in
                         searchResultRow(pokemon)
+                            .padding(.horizontal)
+                            .background(Color(.systemBackground))
+                            .cornerRadius(8)
+                            .padding(.horizontal, 8)
                     }
                 }
             }
             
             // Recent searches (if any and we're not currently searching)
             if !viewModel.recentSearches.isEmpty && searchText.isEmpty {
-                Section(header: Text("Recent Searches")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Recent Searches")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
                     ForEach(viewModel.recentSearches, id: \.id) { pokemon in
                         searchResultRow(pokemon)
+                            .padding(.horizontal)
+                            .background(Color(.systemBackground))
+                            .cornerRadius(8)
+                            .padding(.horizontal, 8)
                     }
                 }
             }
             
             // Popular Pokemon (if we're not currently searching)
             if !viewModel.popularPokemon.isEmpty && searchText.isEmpty {
-                Section(header: Text("Popular Pokémon")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Popular Pokémon")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
                     ForEach(viewModel.popularPokemon) { pokemon in
                         searchResultRow(pokemon)
+                            .padding(.horizontal)
+                            .background(Color(.systemBackground))
+                            .cornerRadius(8)
+                            .padding(.horizontal, 8)
                     }
                 }
             }
         }
-        .listStyle(InsetGroupedListStyle())
+        .padding(.bottom, 16)
     }
     
     private func searchResultRow(_ pokemon: PokemonListItem) -> some View {
@@ -248,7 +296,10 @@ struct SearchPokemonView: View {
                 Image(systemName: "chevron.right")
                     .foregroundColor(.gray)
             }
+            .contentShape(Rectangle())  // Make the whole row tappable
+            .padding(.vertical, 8)
         }
+        .buttonStyle(PlainButtonStyle())  // Remove default button styling
     }
     
     private func popularPokemonButton(_ pokemon: PokemonListItem) -> some View {
