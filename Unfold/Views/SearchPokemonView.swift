@@ -501,8 +501,11 @@ struct PokemonDetailLoadingView: View {
                     PokemonDetailView(viewModel: viewModel)
                         .onDisappear {
                             // Update shared view model when returning from detail view
-                            DispatchQueue.main.async {
-                                SharedPokemonViewModel.shared.loadBookmarkedPokemon()
+                            // But do it with a slight delay to avoid navigation issues
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                if UserDefaults.standard.array(forKey: "bookmarkedPokemon") as? [Int] != SharedPokemonViewModel.shared.bookmarkedPokemon {
+                                    SharedPokemonViewModel.shared.loadBookmarkedPokemon()
+                                }
                             }
                         }
                 } else {
@@ -528,7 +531,10 @@ struct PokemonDetailLoadingView: View {
             
             // Copy bookmarks from shared model using async to avoid state updates during view rendering
             DispatchQueue.main.async {
-                self.viewModel.bookmarkedPokemon = SharedPokemonViewModel.shared.bookmarkedPokemon
+                // Only copy if there's a difference to avoid unnecessary updates
+                if Set(self.viewModel.bookmarkedPokemon) != Set(SharedPokemonViewModel.shared.bookmarkedPokemon) {
+                    self.viewModel.bookmarkedPokemon = SharedPokemonViewModel.shared.bookmarkedPokemon
+                }
             }
         }
     }

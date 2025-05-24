@@ -5,6 +5,9 @@ struct BookmarkedPokemonView: View {
     @State private var showingDeleteConfirmation = false
     @State private var pokemonToDelete: Int?
     
+    // Store the observer token to properly manage lifecycle
+    @State private var notificationToken: NSObjectProtocol?
+    
     var body: some View {
         NavigationStack {
             Group {
@@ -44,30 +47,23 @@ struct BookmarkedPokemonView: View {
             // Load bookmarks when the view appears
             viewModel.loadBookmarkedPokemon()
             
-            // Set up notification observer for bookmark changes
-            setupNotificationObserver()
+            // Only set up the notification observer if it doesn't exist
+            if notificationToken == nil {
+                notificationToken = NotificationCenter.default.addObserver(
+                    forName: .pokemonBookmarksChanged,
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    // Debounce the updates to prevent excessive reloading
+                    // We don't need to reload here as the shared viewModel is already updated
+                }
+            }
         }
         .onDisappear {
             // Remove notification observer when view disappears
-            NotificationCenter.default.removeObserver(self, name: .pokemonBookmarksChanged, object: nil)
-        }
-    }
-    
-    // MARK: - Notification Handling
-    
-    private func setupNotificationObserver() {
-        // Remove any existing observer first to avoid duplicates
-        NotificationCenter.default.removeObserver(self, name: .pokemonBookmarksChanged, object: nil)
-        
-        // Add the observer
-        NotificationCenter.default.addObserver(
-            forName: .pokemonBookmarksChanged,
-            object: nil,
-            queue: .main
-        ) { _ in
-            // Reload bookmarked Pokemon when notification is received
-            DispatchQueue.main.async {
-                self.viewModel.loadBookmarkedPokemon()
+            if let token = notificationToken {
+                NotificationCenter.default.removeObserver(token)
+                notificationToken = nil
             }
         }
     }

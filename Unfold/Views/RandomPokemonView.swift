@@ -80,8 +80,12 @@ struct RandomPokemonView: View {
                                             return PokemonDetailView(viewModel: detailViewModel)
                                                 .onDisappear {
                                                     // Update shared model when returning
-                                                    DispatchQueue.main.async {
-                                                        viewModel.loadBookmarkedPokemon()
+                                                    // Use a delay to avoid navigation issues
+                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                                        // Only update if there are actual changes
+                                                        if UserDefaults.standard.array(forKey: "bookmarkedPokemon") as? [Int] != viewModel.bookmarkedPokemon {
+                                                            viewModel.loadBookmarkedPokemon()
+                                                        }
                                                     }
                                                 }
                                         } label: {
@@ -103,9 +107,21 @@ struct RandomPokemonView: View {
                                         // Bookmark Button
                                         Button(action: {
                                             if let pokemon = viewModel.pokemon {
-                                                viewModel.toggleBookmark(for: pokemon.id)
-                                                // Immediately reload bookmarks to update all views
-                                                viewModel.loadBookmarkedPokemon()
+                                                // Use a more direct approach to toggle bookmark
+                                                // to avoid excessive updates
+                                                let pokemonId = pokemon.id
+                                                let isCurrentlyBookmarked = viewModel.isBookmarked(pokemonId)
+                                                
+                                                DispatchQueue.main.async {
+                                                    if isCurrentlyBookmarked {
+                                                        viewModel.bookmarkedPokemon.removeAll { $0 == pokemonId }
+                                                    } else {
+                                                        viewModel.bookmarkedPokemon.append(pokemonId)
+                                                    }
+                                                    
+                                                    // Save the changes to UserDefaults
+                                                    UserDefaults.standard.set(viewModel.bookmarkedPokemon, forKey: "bookmarkedPokemon")
+                                                }
                                             }
                                         }) {
                                             HStack {

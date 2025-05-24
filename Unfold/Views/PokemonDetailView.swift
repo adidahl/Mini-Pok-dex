@@ -51,8 +51,12 @@ struct PokemonDetailView: View {
                         viewModel.toggleBookmark(for: pokemon.id)
                         
                         // Also toggle in the shared model to keep them in sync
-                        if SharedPokemonViewModel.shared !== viewModel {
-                            SharedPokemonViewModel.shared.toggleBookmark(for: pokemon.id)
+                        // But only if this isn't the shared model itself
+                        if viewModel !== SharedPokemonViewModel.shared {
+                            // Update only the UserDefaults value in the shared model
+                            // without triggering notifications or excessive updates
+                            SharedPokemonViewModel.shared.bookmarkedPokemon = viewModel.bookmarkedPokemon
+                            UserDefaults.standard.set(viewModel.bookmarkedPokemon, forKey: "bookmarkedPokemon")
                         }
                     }) {
                         Image(systemName: viewModel.isBookmarked(pokemon.id) ? "bookmark.fill" : "bookmark")

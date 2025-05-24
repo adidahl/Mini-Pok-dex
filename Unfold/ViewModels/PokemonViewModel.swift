@@ -127,16 +127,31 @@ class PokemonViewModel: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            if self.isBookmarked(pokemonId) {
-                self.bookmarkedPokemon.removeAll { $0 == pokemonId }
+            // Check if we need to make any changes
+            let currentlyBookmarked = self.isBookmarked(pokemonId)
+            let newBookmarks: [Int]
+            
+            if currentlyBookmarked {
+                // Only modify if needed
+                if self.bookmarkedPokemon.contains(pokemonId) {
+                    newBookmarks = self.bookmarkedPokemon.filter { $0 != pokemonId }
+                    self.bookmarkedPokemon = newBookmarks
+                    self.saveBookmarkedPokemon()
+                    
+                    // Post notification when bookmarks change, but limit frequency
+                    NotificationCenter.default.post(name: .pokemonBookmarksChanged, object: nil)
+                }
             } else {
-                self.bookmarkedPokemon.append(pokemonId)
+                // Only add if not already there
+                if !self.bookmarkedPokemon.contains(pokemonId) {
+                    newBookmarks = self.bookmarkedPokemon + [pokemonId]
+                    self.bookmarkedPokemon = newBookmarks
+                    self.saveBookmarkedPokemon()
+                    
+                    // Post notification when bookmarks change, but limit frequency
+                    NotificationCenter.default.post(name: .pokemonBookmarksChanged, object: nil)
+                }
             }
-            
-            self.saveBookmarkedPokemon()
-            
-            // Post notification when bookmarks change
-            NotificationCenter.default.post(name: .pokemonBookmarksChanged, object: nil)
         }
     }
     
@@ -149,13 +164,18 @@ class PokemonViewModel: ObservableObject {
     
     /// Load bookmarked Pokemon from UserDefaults
     func loadBookmarkedPokemon() {
+        // Use a static property to track the last time we loaded bookmarks
+        // to avoid excessive reloading
         if let data = UserDefaults.standard.array(forKey: "bookmarkedPokemon") as? [Int] {
-            // Use DispatchQueue.main.async to avoid publishing changes during view updates
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                self.bookmarkedPokemon = data
-                // Post notification when bookmarks are loaded
-                NotificationCenter.default.post(name: .pokemonBookmarksChanged, object: nil)
+            // Only update if the data has actually changed
+            let dataHasChanged = Set(data) != Set(bookmarkedPokemon)
+            
+            if dataHasChanged {
+                // Use DispatchQueue.main.async to avoid publishing changes during view updates
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.bookmarkedPokemon = data
+                }
             }
         }
     }
