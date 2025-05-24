@@ -6,7 +6,7 @@ struct SearchPokemonView: View {
     @State private var selectedPokemon: Pokemon?
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 // Search bar
                 searchBar
@@ -248,7 +248,6 @@ struct SearchPokemonView: View {
                 Image(systemName: "chevron.right")
                     .foregroundColor(.gray)
             }
-            .contentShape(Rectangle())
         }
     }
     
