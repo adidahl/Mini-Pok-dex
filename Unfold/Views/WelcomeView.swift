@@ -23,19 +23,6 @@ struct WelcomeView: View {
                         .multilineTextAlignment(.center)
                         .padding(.top, 60)
                     
-                    // App icon or logo
-                    Image(systemName: "sparkles")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 100, height: 100)
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(
-                            Circle()
-                                .fill(Color.white.opacity(0.2))
-                                .frame(width: 160, height: 160)
-                        )
-                    
                     // App description
                     Text("Discover the world of Pokémon with your kids!")
                         .font(.title3)
@@ -43,6 +30,7 @@ struct WelcomeView: View {
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
+                        .padding(.bottom, 20) // Add some padding at the bottom
                     
                     // Features section
                     featuresSection
