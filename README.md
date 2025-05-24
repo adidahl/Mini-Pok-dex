@@ -2,8 +2,6 @@
 
 A kid-friendly iOS app that allows families to explore Pokémon together. This application provides a simple and colorful interface for parents to show their children a different Pokémon each day and learn more about their favorite characters from Pokémon GO.
 
-![App Banner](https://via.placeholder.com/800x400.png?text=Mini+Pok%C3%A9dex)
-
 ## Features
 
 ### For Parents
@@ -34,7 +32,7 @@ A kid-friendly iOS app that allows families to explore Pokémon together. This a
 ### Setup Instructions
 1. Clone the repository:
    ```bash
-   git clone https://github.com/adidahl/mini-pokedex.git
+   git clone https://github.com/adidahl/Mini-Pok-dex
    ```
 
 2. Open the project in Xcode:
@@ -82,10 +80,6 @@ MiniPokedex/
 ├── Services/       # Networking and persistence services
 └── Utilities/      # Helper functions and extensions
 ```
-
-## Contributing
-
-This project is currently in development. If you'd like to contribute, please feel free to submit a pull request or open an issue for discussion.
 
 ## License
 
