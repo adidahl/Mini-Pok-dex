@@ -53,10 +53,9 @@ struct BookmarkedPokemonView: View {
                     forName: .pokemonBookmarksChanged,
                     object: nil,
                     queue: .main
-                ) { [weak self] _ in
+                ) { _ in
                     // When a bookmark changes, update the view model's bookmarks list
                     DispatchQueue.main.async {
-                        guard let self = self else { return }
                         if let userDefaultsBookmarks = UserDefaults.standard.array(forKey: "bookmarkedPokemon") as? [Int] {
                             self.viewModel.bookmarkedPokemon = userDefaultsBookmarks
                         }
