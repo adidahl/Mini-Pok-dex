@@ -91,7 +91,17 @@ struct Pokemon: Identifiable, Codable, Hashable {
 
 // This is a more lightweight model used for lists and search results
 struct PokemonListItem: Identifiable, Codable, Equatable {
-    let id: Int
+    var id: Int {
+        // Extract ID from the URL
+        // URL format is typically: "https://pokeapi.co/api/v2/pokemon/25/"
+        if let lastPathComponent = URL(string: url)?.lastPathComponent,
+           let id = Int(lastPathComponent) {
+            return id
+        }
+        // Fallback if URL parsing fails
+        return 0
+    }
+    
     let name: String
     let url: String
     
@@ -101,7 +111,11 @@ struct PokemonListItem: Identifiable, Codable, Equatable {
     
     // Implement the Equatable protocol
     static func == (lhs: PokemonListItem, rhs: PokemonListItem) -> Bool {
-        return lhs.id == rhs.id
+        return lhs.id == rhs.id && lhs.name == rhs.name
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case name, url
     }
 }
 

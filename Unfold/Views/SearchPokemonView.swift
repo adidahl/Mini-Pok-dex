@@ -344,7 +344,9 @@ class SearchViewModel: ObservableObject {
             case .success(let pokemon):
                 DispatchQueue.main.async {
                     // Direct match found
-                    let item = PokemonListItem(id: pokemon.id, name: pokemon.name, url: "")
+                    // Create PokemonListItem with url that includes the id
+                    let url = "https://pokeapi.co/api/v2/pokemon/\(pokemon.id)/"
+                    let item = PokemonListItem(name: pokemon.name, url: url)
                     self.searchResults = [item]
                     self.addToRecentSearches(item)
                     self.isLoading = false
