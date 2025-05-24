@@ -25,7 +25,10 @@ struct UnfoldApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // Apply the welcome screen to the main tab view
+            MainTabView()
+                .withWelcomeScreen()
+                .preferredColorScheme(.light) // Default to light mode
         }
         .modelContainer(sharedModelContainer)
     }
