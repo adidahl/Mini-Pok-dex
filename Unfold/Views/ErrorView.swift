@@ -158,6 +158,8 @@ struct NetworkErrorView: View {
             return "The server responded with an error (code: \(code)). Please try again later."
         case .unknownError(let error):
             return "An unexpected error occurred: \(error.localizedDescription)"
+        case .invalidResponse:
+            return "The server sent an invalid response. Please try again later."
         }
     }
 }

@@ -1,12 +1,34 @@
 import Foundation
 
 // Custom error types for network requests
-enum NetworkError: Error {
+enum NetworkError: Error, Equatable {
     case invalidURL
     case noData
     case decodingError
     case serverError(statusCode: Int)
     case unknownError(Error)
+    case invalidResponse
+    
+    static func == (lhs: NetworkError, rhs: NetworkError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidURL, .invalidURL):
+            return true
+        case (.noData, .noData):
+            return true
+        case (.decodingError, .decodingError):
+            return true
+        case (.serverError(let lhsCode), .serverError(let rhsCode)):
+            return lhsCode == rhsCode
+        case (.invalidResponse, .invalidResponse):
+            return true
+        case (.unknownError, .unknownError):
+            // This is a simplified comparison that might not be accurate
+            // since we can't compare the underlying errors directly
+            return true
+        default:
+            return false
+        }
+    }
     
     var localizedDescription: String {
         switch self {
@@ -20,13 +42,15 @@ enum NetworkError: Error {
             return "Server error with status code: \(statusCode)"
         case .unknownError(let error):
             return "An unknown error occurred: \(error.localizedDescription)"
+        case .invalidResponse:
+            return "The server returned an invalid response."
         }
     }
 }
 
 // Network manager for API requests
-class NetworkManager {
-    static let shared = NetworkManager()
+class NetworkManager: NetworkManagerProtocol {
+    static var shared: NetworkManagerProtocol = NetworkManager()
     
     private let baseURL = "https://pokeapi.co/api/v2"
     private let session: URLSession
@@ -101,7 +125,7 @@ class NetworkManager {
             }
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(.noData))
+                completion(.failure(.invalidResponse))
                 return
             }
             

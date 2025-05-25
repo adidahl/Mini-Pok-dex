@@ -471,7 +471,7 @@ class SearchViewModel: ObservableObject {
         }
     }
     
-    private func addToRecentSearches(_ pokemon: PokemonListItem) {
+    internal func addToRecentSearches(_ pokemon: PokemonListItem) {
         // Remove if already exists
         recentSearches.removeAll { $0.id == pokemon.id }
         
@@ -515,7 +515,7 @@ class SearchViewModel: ObservableObject {
     }
     
     // Levenshtein distance for fuzzy matching
-    private func calculateSimilarity(between s1: String, and s2: String) -> Double {
+    internal func calculateSimilarity(between s1: String, and s2: String) -> Double {
         let empty = [Int](repeating: 0, count: s2.count)
         var last = [Int](0...s2.count)
         

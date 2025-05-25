@@ -76,12 +76,14 @@ extension MockNetworkManager: NetworkManagerProtocol {
         }
     }
     
-    func fetchEvolutionChain(id: Int, completion: @escaping (Result<PokemonEvolutionChainResponse, NetworkError>) -> Void) {
+    func fetchEvolutionChain(id: Int, completion: @escaping (Result<EvolutionChain, NetworkError>) -> Void) {
         fetchEvolutionChainCalled = true
         fetchEvolutionChainId = id
         
         if shouldSucceed, let mockChain = mockEvolutionChain {
-            completion(.success(mockChain))
+            // Convert from test model to app model
+            let evolutionChain = mockChain.toEvolutionChain()
+            completion(.success(evolutionChain))
         } else {
             completion(.failure(mockError))
         }
